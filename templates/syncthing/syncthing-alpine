@@ -1,0 +1,16 @@
+#!/sbin/openrc-run
+
+# https://github.com/OpenRC/openrc/blob/master/service-script-guide.md
+
+command="{{ syncthing_bin_path }}"
+command_args="serve {{ syncthing_flags }} --home={{ item.home_dir }} {{ item.args }}"
+command_user="{{ ansible_user }}"
+command_background=true
+pidfile="/run/${RC_SVCNAME}.pid"
+
+description="syncthing-{{ item.name }}"
+
+depend() {
+    need localmount
+    need net
+}

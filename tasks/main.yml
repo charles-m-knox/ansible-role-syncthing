@@ -1,0 +1,127 @@
+# SPDX-License-Identifier: MIT-0
+---
+# first, build syncthing from scratch (requires go), then install it to
+# /usr/local/bin/syncthing
+
+- name: Create systemd directory for user-scoped services
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config/systemd/user"
+    state: directory
+    mode: "0755"
+  when: syncthing_instances | length > 0
+  tags:
+    - syncthing
+
+- name: Create temporary directory for building syncthing
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: syncthing
+  register: syncthing_temporary_dir
+  when: syncthing_instances | length > 0
+  tags:
+    - syncthing
+
+- name: Clone syncthing
+  ansible.builtin.git:
+    repo: "https://github.com/syncthing/syncthing.git"
+    dest: "{{ syncthing_temporary_dir.path }}"
+    version: "{{ syncthing_version }}"
+    depth: "1"
+  when: syncthing_instances | length > 0
+  tags:
+    - syncthing
+
+- name: Build syncthing  # noqa no-changed-when
+  ansible.builtin.shell:
+    chdir: "{{ syncthing_temporary_dir.path }}"
+    cmd: |
+      set -o pipefail
+      ./build.sh
+  when: syncthing_instances | length > 0
+  tags:
+    - syncthing
+
+- name: Install the compiled syncthing binary
+  ansible.builtin.copy:
+    src: "{{ syncthing_temporary_dir.path }}/bin/syncthing"
+    dest: "{{ syncthing_bin_path }}"
+    remote_src: true
+    mode: "0755"
+    force: true
+  become: true
+  when: syncthing_instances | length > 0
+  tags:
+    - syncthing
+
+# now proceed to iterate through every defined syncthing instance
+
+- name: Create syncthing instance home dir
+  ansible.builtin.file:
+    path: "{{ item.home_dir }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ syncthing_instances }}"
+  when: syncthing_instances | length > 0
+  tags:
+    - syncthing
+
+- name: Create syncthing instance data dir
+  ansible.builtin.file:
+    path: "{{ item.data_dir }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ syncthing_instances }}"
+  when: syncthing_instances | length > 0
+  tags:
+    - syncthing
+
+- name: Create syncthing service (openrc)
+  ansible.builtin.template:
+    dest: "/etc/init.d/syncthing-{{ item.name }}"
+    src: syncthing/syncthing-alpine
+    mode: "0755"
+  loop: "{{ syncthing_instances }}"
+  become: true
+  when:
+    - syncthing_instances | length > 0
+    - ansible_service_mgr == 'openrc'
+  tags:
+    - syncthing
+
+- name: Create syncthing service (systemd)
+  ansible.builtin.template:
+    dest: "{{ ansible_env.HOME }}/.config/systemd/user/syncthing-{{ item.name }}.service"
+    src: syncthing/syncthing.service
+    mode: "0644"
+  loop: "{{ syncthing_instances }}"
+  when:
+    - syncthing_instances | length > 0
+    - ansible_service_mgr == 'systemd'
+  tags:
+    - syncthing
+
+- name: Start syncthing (openrc)  # noqa no-changed-when
+  ansible.builtin.shell:
+    cmd: >
+      rc-service syncthing stop || true; rc-update add syncthing default && rc-service syncthing start
+  become: true
+  loop: "{{ syncthing_instances }}"
+  when:
+    - syncthing_instances | length > 0
+    - ansible_service_mgr == 'openrc'
+  tags:
+    - syncthing
+
+- name: Start syncthing (systemd)
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+    scope: user
+    state: restarted
+    name: "syncthing-{{ item.name }}"
+    enabled: true
+  loop: "{{ syncthing_instances }}"
+  when:
+    - syncthing_instances | length > 0
+    - ansible_service_mgr == 'systemd'
+  tags:
+    - syncthing
