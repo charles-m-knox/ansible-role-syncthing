@@ -62,8 +62,8 @@ list like this:
 ```yaml
 syncthing_instances:
   - name: main
-    data_dir: "{{ ansible_env.HOME }}/syncthing"  # will be created
-    home_dir: "{{ ansible_env.HOME }}/.config/syncthing"  # will be created
+    data_dir: "{{ ansible_facts['env']['HOME'] }}/syncthing"  # will be created
+    home_dir: "{{ ansible_facts['env']['HOME'] }}/.config/syncthing"  # will be created
     args: "--no-default-folder --gui-address=127.0.0.1:8384"
 ```
 

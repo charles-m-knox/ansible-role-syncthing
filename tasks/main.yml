@@ -5,7 +5,7 @@
 
 - name: Create systemd directory for user-scoped services
   ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/.config/systemd/user"
+    path: "{{ ansible_facts['env']['HOME'] }}/.config/systemd/user"
     state: directory
     mode: "0755"
   when: syncthing_instances | length > 0
@@ -90,7 +90,7 @@
 
 - name: Create syncthing service (systemd)
   ansible.builtin.template:
-    dest: "{{ ansible_env.HOME }}/.config/systemd/user/syncthing-{{ item.name }}.service"
+    dest: "{{ ansible_facts['env']['HOME'] }}/.config/systemd/user/syncthing-{{ item.name }}.service"
     src: syncthing/syncthing.service
     mode: "0644"
   loop: "{{ syncthing_instances }}"
