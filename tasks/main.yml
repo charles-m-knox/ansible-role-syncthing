@@ -84,7 +84,7 @@
   become: true
   when:
     - syncthing_instances | length > 0
-    - ansible_service_mgr == 'openrc'
+    - ansible_facts['ansible_service_mgr'] == 'openrc'
   tags:
     - syncthing
 
@@ -96,7 +96,7 @@
   loop: "{{ syncthing_instances }}"
   when:
     - syncthing_instances | length > 0
-    - ansible_service_mgr == 'systemd'
+    - ansible_facts['ansible_service_mgr'] == 'systemd'
   tags:
     - syncthing
 
@@ -108,7 +108,7 @@
   loop: "{{ syncthing_instances }}"
   when:
     - syncthing_instances | length > 0
-    - ansible_service_mgr == 'openrc'
+    - ansible_facts['ansible_service_mgr'] == 'openrc'
   tags:
     - syncthing
 
@@ -122,6 +122,6 @@
   loop: "{{ syncthing_instances }}"
   when:
     - syncthing_instances | length > 0
-    - ansible_service_mgr == 'systemd'
+    - ansible_facts['ansible_service_mgr'] == 'systemd'
   tags:
     - syncthing
