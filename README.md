@@ -64,7 +64,7 @@ syncthing_instances:
   - name: main
     data_dir: "{{ ansible_facts['env']['HOME'] }}/syncthing"  # will be created
     home_dir: "{{ ansible_facts['env']['HOME'] }}/.config/syncthing"  # will be created
-    args: "--no-default-folder --gui-address=127.0.0.1:8384"
+    args: "--gui-address=127.0.0.1:8384"
 ```
 
 Finally, run your playbook, optionally stepping through one-by-one:
